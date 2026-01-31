@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>For You, Elaks</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;1,700&display=swap" rel="stylesheet">
+    <style>
+        @font-face {
+            font-family: 'Satoshi';
+            src: url('https://cdn.fontshare.com/wf/TTZ6SQC272CD4Y7XIZ7BODDX6YWL3Z3O/L7W6AXU7URBR6BRDXSTFB7S6O75JGSYI/V7666I7AOYR6N3T6S26XG2B6O7N66H6X.woff2') format('woff2');
+        }
+
+        :root {
+            --aurora-1: hsla(333, 70%, 55%, 0.4);
+            --aurora-2: hsla(282, 82%, 54%, 0.3);
+            --aurora-3: hsla(210, 89%, 60%, 0.3);
+            --aurora-4: hsla(35, 90%, 60%, 0.3);
+        }
+
+        body {
+            background-color: #0c0a09;
+            color: #f8fafc;
+            font-family: 'Satoshi', sans-serif;
+            margin: 0;
+            overflow: hidden;
+            height: 100dvh; /* Dynamic viewport height for mobile browsers */
+            touch-action: manipulation;
+        }
+
+        .aurora-container {
+            position: fixed;
+            inset: 0;
+            z-index: -2;
+            background: #0c0a09;
+        }
+
+        .aurora-layer {
+            position: absolute;
+            inset: -50%;
+            background: 
+                radial-gradient(circle at 20% 30%, var(--aurora-1) 0%, transparent 50%),
+                radial-gradient(circle at 80% 70%, var(--aurora-2) 0%, transparent 50%),
+                radial-gradient(circle at 50% 50%, var(--aurora-3) 0%, transparent 50%),
+                radial-gradient(circle at 10% 90%, var(--aurora-4) 0%, transparent 50%);
+            filter: blur(60px);
+            animation: aurora-flow 20s ease-in-out infinite alternate;
+        }
+
+        @keyframes aurora-flow {
+            0% { transform: scale(1) translate(0, 0); }
+            100% { transform: scale(1.2) translate(2%, 5%); }
+        }
+
+        #three-canvas {
+            position: fixed;
+            inset: 0;
+            z-index: -1;
+            pointer-events: none;
+        }
+
+        .glass-card {
+            background: rgba(15, 12, 11, 0.6);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 24px;
+            opacity: 0;
+            display: none;
+            width: 100%;
+            max-width: 90vw;
+            margin: 0 auto;
+        }
+
+        .glass-card.active {
+            display: block;
+        }
+
+        .text-gradient {
+            background: linear-gradient(135deg, #fce7f3 0%, #fbcfe8 50%, #ffffff 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            font-family: 'Playfair Display', serif;
+        }
+
+        .btn-pill {
+            background: linear-gradient(135deg, #ec4899 0%, #be123c 100%);
+            box-shadow: 0 8px 20px -5px rgba(236, 72, 153, 0.5);
+            border-radius: 9999px;
+            transition: transform 0.2s ease;
+        }
+
+        .btn-pill:active { transform: scale(0.95); }
+
+        .progress-track {
+            position: fixed;
+            top: 1.5rem;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 120px;
+            height: 4px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            z-index: 100;
+        }
+
+        #progress-fill {
+            height: 100%;
+            width: 20%;
+            background: #ec4899;
+            border-radius: 10px;
+            transition: width 0.5s ease;
+        }
+
+        .polaroid-frame {
+            background: white;
+            padding: 8px 8px 30px 8px;
+            box-shadow: 0 15px 30px rgba(0,0,0,0.5);
+            transform: rotate(-2deg);
+            max-width: 240px;
+            margin: 0 auto;
+        }
+
+        .polaroid-frame img {
+            width: 100%;
+            height: 200px;
+            object-fit: cover;
+        }
+
+        .polaroid-caption {
+            font-family: 'Playfair Display', serif;
+            color: #334155;
+            font-size: 0.8rem;
+            margin-top: 10px;
+            text-align: center;
+        }
+    </style>
+</head>
+<body class="flex items-center justify-center px-4">
+
+    <div class="aurora-container"><div class="aurora-layer"></div></div>
+    <canvas id="three-canvas"></canvas>
+    <div class="progress-track"><div id="progress-fill"></div></div>
+
+    <main class="w-full z-10 flex flex-col items-center">
+        
+        <section id="step1" class="glass-card active p-6 text-center space-y-6">
+            <div class="text-6xl mb-2">❤️</div>
+            <h1 class="text-3xl font-bold text-gradient">Hey Beautiful,</h1>
+            <p class="text-slate-300 text-sm leading-relaxed">I built a little world for you, just to bring a smile to your face on your special day.</p>
+            <button onclick="navigate(2)" class="btn-pill px-8 py-3 w-full text-white font-bold">Let's Begin</button>
+        </section>
+
+        <section id="step2" class="glass-card p-6 text-center space-y-6">
+            <div class="text-6xl mb-2">🎉</div>
+            <h1 class="text-3xl font-bold text-gradient">Anniversary!</h1>
+            <p class="text-slate-300 text-sm leading-relaxed">Another year of you making the world brighter. Your existence is a gift.</p>
+            <button onclick="navigate(3)" class="btn-pill px-8 py-3 w-full text-white font-bold">There's more...</button>
+        </section>
+
+        <section id="step3" class="glass-card p-5 space-y-4">
+            <h2 class="text-2xl text-gradient text-center">I Adore You</h2>
+            <div class="grid grid-cols-1 gap-3">
+                <div class="bg-white/5 border border-white/10 p-3 rounded-xl">
+                    <h3 class="text-pink-400 font-bold text-sm">✨ Kindness</h3>
+                    <p class="text-[11px] text-slate-400">Your warmth is truly beautiful.</p>
+                </div>
+                <div class="bg-white/5 border border-white/10 p-3 rounded-xl">
+                    <h3 class="text-pink-400 font-bold text-sm">😊 That Smile</h3>
+                    <p class="text-[11px] text-slate-400">It's a literal work of art.</p>
+                </div>
+                <div class="bg-white/5 border border-white/10 p-3 rounded-xl">
+                    <h3 class="text-pink-400 font-bold text-sm">🌟 Radiant Spirit</h3>
+                    <p class="text-[11px] text-slate-400">Being around you makes everything possible.</p>
+                </div>
+            </div>
+            <button onclick="navigate(4)" class="btn-pill px-8 py-3 w-full text-white font-bold">Remember this?</button>
+        </section>
+
+        <section id="step4" class="glass-card p-6 text-center space-y-5">
+            <h2 class="text-2xl text-gradient">That One Time...</h2>
+            <div class="polaroid-frame">
+                <img src="https://i.ibb.co/358JprDh/Whats-App-Image-2026-01-31-at-11-48-47-PM.jpg" alt="Memory">
+                <div class="polaroid-caption">Our favorite memory.</div>
+            </div>
+            <button onclick="navigate(5)" class="btn-pill px-8 py-3 w-full text-white font-bold">One last thing...</button>
+        </section>
+
+        <section id="step5" class="glass-card p-6 text-center space-y-6">
+            <div class="text-6xl mb-2">🎂</div>
+            <h1 class="text-3xl text-gradient">My Wish</h1>
+            <p class="text-slate-300 text-sm">May your dreams soar higher than ever.</p>
+            
+            <div id="final-tribute" class="hidden opacity-0">
+                <h2 class="text-2xl font-serif text-violet-400 font-bold leading-tight">
+                    Happy Anniversary,<br>my wife and lover,<br>
+                    <span class="text-violet-200 tracking-tighter text-4xl">ELAKS!</span> ❤️
+                </h2>
+            </div>
+
+            <button id="celebrate-btn" onclick="runFinale()" class="btn-pill px-8 py-3 w-full text-white font-bold">Celebrate!</button>
+        </section>
+
+    </main>
+
+    <script>
+        // --- THREE.JS ---
+        let scene, camera, renderer, hearts = [];
+        let exitMode = false;
+
+        function initThree() {
+            scene = new THREE.Scene();
+            camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+            renderer = new THREE.WebGLRenderer({ canvas: document.getElementById('three-canvas'), alpha: true, antialias: true });
+            renderer.setPixelRatio(window.devicePixelRatio);
+            renderer.setSize(window.innerWidth, window.innerHeight);
+
+            const heartShape = new THREE.Shape();
+            heartShape.moveTo(0, 0);
+            heartShape.bezierCurveTo(0, -3, -5, -3, -5, 2);
+            heartShape.bezierCurveTo(-5, 6, 0, 10, 0, 12);
+            heartShape.bezierCurveTo(0, 10, 5, 6, 5, 2);
+            heartShape.bezierCurveTo(5, -3, 0, -3, 0, 0);
+
+            const geometry = new THREE.ExtrudeGeometry(heartShape, { depth: 1, bevelEnabled: true, bevelThickness: 0.5 });
+            
+            for(let i=0; i<15; i++) { // Fewer hearts for mobile performance
+                const material = new THREE.MeshPhongMaterial({ color: 0xff4d6d });
+                const heart = new THREE.Mesh(geometry, material);
+                heart.position.set(Math.random() * 30 - 15, Math.random() * 30 - 15, Math.random() * 10 - 20);
+                heart.rotation.x = Math.PI;
+                heart.scale.set(0.1, 0.1, 0.1);
+                scene.add(heart);
+                hearts.push(heart);
+            }
+
+            const light = new THREE.PointLight(0xffffff, 1);
+            light.position.set(0, 5, 10);
+            scene.add(light, new THREE.AmbientLight(0x404040));
+            camera.position.z = 15;
+        }
+
+        function animateThree() {
+            requestAnimationFrame(animateThree);
+            hearts.forEach(h => {
+                if(!exitMode) {
+                    h.rotation.y += 0.01;
+                    h.position.y += Math.sin(Date.now() * 0.001) * 0.005;
+                } else {
+                    h.position.y += 0.2;
+                    h.position.x += (h.position.x > 0 ? 0.1 : -0.1);
+                }
+            });
+            renderer.render(scene, camera);
+        }
+
+        // --- NAVIGATION ---
+        let current = 1;
+        function navigate(n) {
+            gsap.to(`#step${current}`, { opacity: 0, y: -20, duration: 0.4, onComplete: () => {
+                document.getElementById(`step${current}`).classList.remove('active');
+                document.getElementById(`step${n}`).classList.add('active');
+                gsap.to(`#step${n}`, { opacity: 1, y: 0, duration: 0.5 });
+                current = n;
+                document.getElementById('progress-fill').style.width = `${(n / 5) * 100}%`;
+            }});
+        }
+
+        // --- FINALE ---
+        function runFinale() {
+            exitMode = true;
+            document.getElementById('celebrate-btn').style.display = 'none';
+            const tribute = document.getElementById('final-tribute');
+            tribute.classList.remove('hidden');
+            gsap.to(tribute, { opacity: 1, duration: 1 });
+
+            const end = Date.now() + 4000;
+            (function frame() {
+                confetti({ particleCount: 3, angle: 60, spread: 55, origin: { x: 0 }, colors: ['#ec4899', '#a855f7'] });
+                confetti({ particleCount: 3, angle: 120, spread: 55, origin: { x: 1 }, colors: ['#ec4899', '#a855f7'] });
+                if (Date.now() < end) requestAnimationFrame(frame);
+            }());
+        }
+
+        // Init
+        initThree();
+        animateThree();
+        window.onload = () => gsap.to("#step1", { opacity: 1, duration: 1 });
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+    </script>
+</body>
+</html>
